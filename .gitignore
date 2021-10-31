@@ -3,6 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+goodreads_books.json
+goodreads_interactions.csv
+*.csv
+
+.DS_Store
+
 # C extensions
 *.so
 
