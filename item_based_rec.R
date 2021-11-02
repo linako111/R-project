@@ -1,11 +1,3 @@
-# url = "http://www2.informatik.uni-freiburg.de/~cziegler/BX/BX-CSV-Dump.zip"
-# download.file(url, destfile = "data.zip")
-# dir.create("data")
-# unzip("data.zip",exdir = "data")   
-# 
-# files = paste0("data/",list.files("data"))
-
-
 library(ggplot2)
 library(tidyr)
 library(dplyr)
@@ -17,41 +9,22 @@ library(png)
 ratings = read.csv("ratings.csv")
 books = read.csv("books.csv")
 
+# ratings = ratings[ratings$is_read > 0 & ratings$is_reviewed > 0]
+
+dim(books)
+dim(ratings)
+
 ratings$X = NULL
 ratings$book_id_csv = NULL
 ratings$is_read = NULL
 ratings$is_reviewed = NULL
 
-# users = read.csv(files[3], sep = ";")
-
-# rm(files, url)
-
-library(dplyr)
-library(tidyr)
+names(books)
 glimpse(books)
 
-# set.seed(1234)
-# categories = c("Action and Adventure","Classic","Detective and Mystery","Fantasy")
-# books$category = sample( categories, nrow(books), replace=TRUE, prob=c(0.25, 0.3, 0.25, 0.20))
-# books$category = as.factor(books$category)
-
-# rm(categories)
-names(books)
 books$book_id = paste0("bid.",books$book_id)
-# users$User.ID = paste0("User.",users$User.ID)
 ratings$book_id = paste0("bid.",ratings$book_id)
 ratings$user_id = paste0("user.",ratings$user_id)
-
-
-library(ggplot2)
-
-ratings = ratings[ratings$rating!= 0, ]
-
-ratings %>%
-  group_by(rating) %>%
-  summarize(cases = n()) %>%
-  ggplot(aes(rating, cases)) + geom_col() +
-  theme_minimal() + scale_x_continuous(breaks = 0:10)
 
 ratings_sum = ratings %>%
   group_by(user_id) %>%
@@ -61,7 +34,6 @@ summary(ratings_sum$n)
 
 user_index = ratings_sum$user_id[ratings_sum$n>4]
 
-# users = users[users$User.ID %in% user_index, ]
 ratings = ratings[ratings$user_id %in% user_index, ]
 books = books[books$book_id %in% ratings$book_id,]
 
@@ -71,11 +43,6 @@ user_item = ratings %>%
   top_n(10000) %>%
   pivot_wider(names_from = book_id,values_from = rating) %>%
   as.data.frame()
-
-# user_item$X = NULL
-# user_item$book_id_csv = NULL
-# user_item$is_read = NULL
-# user_item$is_reviewed = NULL
 
 row.names(user_item) = user_item$user_id
 
@@ -109,16 +76,6 @@ item_recommendation = function(bid, rating_matrix = user_item, n_recommendations
   
 }
 
-dim(books)
-# dim(users)
-dim(ratings)
-
-
-
-
-
-# recom_cf_item[order(recom_cf_item$similarity),]
-
 i = 0
 for (bid in colnames(user_item)) {
   recom_cf_item = item_recommendation(bid)
@@ -139,6 +96,7 @@ for (bid in colnames(user_item)) {
   i = i+1
   if (i > 500) break
 }
+
 books[books$book_id == "bid.9992508",]
 fiveimages = c("bid.99746", "bid.9977846", "bid.9997650", "bid.9992508")
 my_book = "bid.99746"
@@ -147,7 +105,7 @@ recom_cf_item
 recom_cf_item = recom_cf_item %>%
   left_join(books, by = c("book_id" = "book_id")) 
 
-visualizar_recomendacion(recom_cf_item[!is.na(recom_cf_item$title),],
+visualize_recommendation(recom_cf_item[!is.na(recom_cf_item$title),],
                          "image_url"
 )
 
@@ -175,7 +133,7 @@ check_visuals = function(recomendation, image, n_books = 6){
 }
 
 
-visualizar_recomendacion = function(recomendation, image, n_books = 5){
+visualize_recommendation = function(recomendation, image, n_books = 5){
   
   if(n_books > nrow(recomendation)) {n_books = nrow(recomendation)}
   
@@ -213,11 +171,11 @@ visualizar_recomendacion = function(recomendation, image, n_books = 5){
   
 }
 
-
-
-visualizar_recomendacion(recom_cf_item[!is.na(recom_cf_item$title),],
+visualize_recommendation(recom_cf_item[!is.na(recom_cf_item$title),],
                          "image_url"
 )
+
+
 
 
 
