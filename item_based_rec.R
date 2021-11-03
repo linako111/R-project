@@ -5,11 +5,10 @@ library(dplyr)
 library(grid)
 library(gridExtra)
 library(png)
+library(jpeg)
 
 ratings = read.csv("ratings.csv")
 books = read.csv("books.csv")
-
-# ratings = ratings[ratings$is_read > 0 & ratings$is_reviewed > 0]
 
 dim(books)
 dim(ratings)
@@ -18,9 +17,6 @@ ratings$X = NULL
 ratings$book_id_csv = NULL
 ratings$is_read = NULL
 ratings$is_reviewed = NULL
-
-names(books)
-glimpse(books)
 
 books$book_id = paste0("bid.",books$book_id)
 ratings$book_id = paste0("bid.",ratings$book_id)
@@ -41,7 +37,7 @@ rm(ratings_sum, user_index)
 
 user_item = ratings %>%
   top_n(10000) %>%
-  pivot_wider(names_from = book_id,values_from = rating) %>%
+  pivot_wider(names_from = book_id, values_from = rating) %>%
   as.data.frame()
 
 row.names(user_item) = user_item$user_id
@@ -71,18 +67,15 @@ item_recommendation = function(bid, rating_matrix = user_item, n_recommendations
     top_n(n_recommendations, similarity) %>%
     arrange(desc(similarity)) 
   
-  # print(dim(recommendations))
   return(recommendations)
   
 }
 
+# looking for predictions for which all 6 (selected book + 5 predicted) images exist
 i = 0
 for (bid in colnames(user_item)) {
   recom_cf_item = item_recommendation(bid)
   if(recom_cf_item$similarity[5] > 0) {
-    # print(i)
-    # print(bid)
-    # print(recom_cf_item$similarity)
     recom_cf_item = recom_cf_item %>%
       left_join(books, by = c("book_id" = "book_id")) 
     
@@ -97,14 +90,12 @@ for (bid in colnames(user_item)) {
   if (i > 500) break
 }
 
-books[books$book_id == "bid.9992508",]
 fiveimages = c("bid.99746", "bid.9977846", "bid.9997650", "bid.9992508")
-my_book = "bid.99746"
+my_book = "bid.9992508"
 recom_cf_item = item_recommendation(my_book)
 recom_cf_item
 recom_cf_item = recom_cf_item %>%
   left_join(books, by = c("book_id" = "book_id")) 
-
 visualize_recommendation(recom_cf_item[!is.na(recom_cf_item$title),],
                          "image_url"
 )
@@ -118,12 +109,8 @@ check_visuals = function(recomendation, image, n_books = 6){
   
   plot = list()
   count = 0
-  # dir.create("content_recommended_images")
   for(i in 1:n_books){
-    # Create dir & Download the images
     img = pull(recomendation[i,which(colnames(recomendation) == image)])
-    # print("SIZE: ") 
-    # print(download_size(img))
     if(download_size(img) > 1000) {
       count = count + 1
     }
@@ -139,14 +126,13 @@ visualize_recommendation = function(recomendation, image, n_books = 5){
   
   plot = list()
   
-  # Create dir & Download the images
-  # dir.create("content_recommended_images")
+  # dir.create("recommended_images")
   
   for(i in 1:(n_books+2)) {
     print(c("I", i))
     if (i == 2) {
       ftype = "png"
-      name = "content_recommended_images/arrow.png"
+      name = "recommended_images/arrow.png"
     } else {
       if(i == 1) {
         idx = 1
@@ -155,14 +141,12 @@ visualize_recommendation = function(recomendation, image, n_books = 5){
       }
       img = pull(recomendation[idx,which(colnames(recomendation) == image)])
       ftype = substr(img, nchar(img) - 2, nchar(img)) # can be png or jpg
-      # print(ftype)
-      name = paste0("content_recommended_images/",idx, ftype)
+      name = paste0("recommended_images/",idx, ftype)
       suppressMessages(
         download.file(as.character(img), destfile = name ,mode = "wb")
       )
     }
     
-    # Assign Object
     print(c(i, name))
     plot[[i]] = rasterGrob(if (ftype == "png") readPNG(name) else readJPEG(name))
   }

@@ -6,6 +6,7 @@ __pycache__/
 goodreads_books.json
 goodreads_interactions.csv
 *.csv
+*.json
 
 .DS_Store
 
